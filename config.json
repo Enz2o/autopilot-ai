@@ -1,0 +1,17 @@
+{
+  "site_name": "Boîte à Outils IA",
+  "site_tagline": "Outils IA et logiciels gratuits testés pour freelances et créateurs",
+  "language": "français",
+  "niche": "outils d'intelligence artificielle et logiciels gratuits ou freemium pour gagner du temps",
+  "audience": "freelances, étudiants et créateurs de contenu francophones",
+  "posts_per_run": 1,
+  "amazon_tag": "",
+  "offers": [
+    {
+      "id": "exemple",
+      "name": "Remplace-moi par ton offre affiliée",
+      "url": "https://example.com/?ref=TON_ID",
+      "pitch": "Décris en une phrase ce que fait le produit et pour qui."
+    }
+  ]
+}
