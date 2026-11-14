@@ -1,10 +1,10 @@
-"""Pipeline: LLM writes article + image prompt -> AI image -> static site -> Telegram channel -> log."""
+"""Pipeline: LLM writes article + image prompt -> AI image -> static site (GitHub Pages) -> log."""
 import json
 import os
 import sys
 import traceback
 
-from agent import image, llm, notify, site
+from agent import image, llm, site
 from agent.common import CFG, DOCS, STATE, log_event, now, site_url
 
 POSTS = STATE / "posts.json"
@@ -24,11 +24,9 @@ Règles :
 - Pour citer une offre partenaire pertinente, écris exactement [[offer:ID]] (3 fois maximum, seulement si pertinent).
 - Pour recommander un produit physique, écris [[amazon:mots clés produit]] (2 fois maximum).
 - image_prompt : en anglais, illustration éditoriale percutante, couleurs vives, AUCUN texte ni logo dans l'image.
-- telegram_caption : accroche de 300 caractères max avec 1 ou 2 emojis, sans lien.
 
 Réponds UNIQUEMENT en JSON avec les clés :
-{{"title": "...", "description": "meta description 150 caractères", "body_markdown": "...",
-"image_prompt": "...", "telegram_caption": "..."}}"""
+{{"title": "...", "description": "meta description 150 caractères", "body_markdown": "...", "image_prompt": "..."}}"""
 
 
 def load_posts():
@@ -48,7 +46,7 @@ def create_post(posts):
         offers="\n".join(f"- {o['id']}: {o['name']} — {o.get('pitch', '')}" for o in offers.values()) or "(aucune)",
         published="\n".join(f"- {p['title']}" for p in posts[:60]) or "(aucun)",
     )
-    data, provider = llm.ask_json(prompt, required=("title", "body_markdown", "image_prompt", "telegram_caption"))
+    data, provider = llm.ask_json(prompt, required=("title", "body_markdown", "image_prompt"))
 
     taken = {p["slug"] for p in posts}
     slug = base = site.slugify(data["title"])
@@ -66,10 +64,9 @@ def create_post(posts):
     site.build_index(DOCS, posts, CFG, base_url)
 
     url = f"{base_url}/p/{slug}.html"
-    on_telegram = notify.publish_channel(img_path, f"{data['telegram_caption'].strip()}\n\n👉 {url}")
     log_event("post", title=post["title"], url=url, image=f"{base_url}/img/{img_path.name}",
-              llm=provider, image_source=img_source, telegram=on_telegram)
-    print(f"publié: {post['title']} -> {url} [llm={provider}, image={img_source}, telegram={on_telegram}]")
+              llm=provider, image_source=img_source)
+    print(f"publié: {post['title']} -> {url} [llm={provider}, image={img_source}]")
 
 
 def run():

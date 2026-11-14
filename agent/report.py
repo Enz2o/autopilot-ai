@@ -1,4 +1,4 @@
-"""Morning Telegram report: last 24h of posts, images, errors and self-heals."""
+"""Morning report (GitHub Issue comment): last 24h of posts, images, errors and self-heals."""
 import html
 import sys
 
@@ -16,7 +16,7 @@ def build(hours=24):
     lines = [f"☀️ <b>Rapport {html.escape(CFG['site_name'])} — {now():%d/%m/%Y}</b>",
              f"📝 Articles publiés (24 h) : <b>{len(posts)}</b> · total : {total}",
              f"🖼 Images IA : {sum(1 for p in posts if not str(p.get('image_source', '')).startswith('svg'))}"
-             f"/{len(posts)} · 📣 Telegram : {sum(1 for p in posts if p.get('telegram'))}/{len(posts)}",
+             f"/{len(posts)}",
              f"🧯 Erreurs : {len(errors)} · 🩹 Réparations : {sum(1 for h in heals if h.get('status') == 'patched')}"]
     if posts:
         lines.append("\n<b>Publications</b>")
@@ -35,5 +35,5 @@ def build(hours=24):
 
 
 if __name__ == "__main__":
-    print("rapport envoyé" if notify.alert(build()) else "pas de TELEGRAM_CHAT_ID : rapport affiché ci-dessus")
+    print("rapport envoyé" if notify.alert(build()) else "hors GitHub Actions : rapport affiché ci-dessus")
     sys.exit(0)

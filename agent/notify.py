@@ -1,4 +1,4 @@
-"""Telegram: private alerts/reports (TELEGRAM_CHAT_ID) and public channel posts (TELEGRAM_CHANNEL_ID)."""
+"""Alerts and morning reports as comments on one GitHub Issue: GitHub emails the repo owner, no extra account."""
 import html
 import os
 import sys
@@ -7,39 +7,39 @@ import requests
 
 from agent.common import redact
 
+API = "https://api.github.com"
+TITLE = "📊 Autopilot : rapports et alertes"
 
-def _call(method, data, files=None):
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not token:
-        print(f"[telegram] pas de token, {method} ignoré")
-        return False
-    try:
-        r = requests.post(f"https://api.telegram.org/bot{token}/{method}", data=data, files=files, timeout=90)
-    except requests.RequestException as e:  # the URL holds the token: redact before printing
-        print(f"[telegram] {method} erreur réseau: {redact(e)}")
-        return False
-    if not r.ok:
-        print(f"[telegram] {method} échec {r.status_code}: {redact(r.text[:300])}")
-    return r.ok
+
+def _issue_number(headers, repo):
+    r = requests.get(f"{API}/repos/{repo}/issues", headers=headers,
+                     params={"labels": "autopilot", "state": "open"}, timeout=30)
+    r.raise_for_status()
+    if r.json():
+        return r.json()[0]["number"]
+    r = requests.post(f"{API}/repos/{repo}/issues", headers=headers, timeout=30, json={
+        "title": TITLE, "labels": ["autopilot"],
+        "body": "Le bot poste ici son rapport du matin et ses alertes. GitHub t'envoie un e-mail à chaque message."})
+    r.raise_for_status()
+    return r.json()["number"]
 
 
 def alert(text):
-    chat = os.getenv("TELEGRAM_CHAT_ID")
-    if not chat:
-        print(redact(text))
+    text = redact(text)
+    token, repo = os.getenv("GITHUB_TOKEN"), os.getenv("GITHUB_REPOSITORY")
+    if not (token and repo):  # local run: just print
+        print(text)
         return False
-    return _call("sendMessage", {"chat_id": chat, "text": redact(text)[:4000], "parse_mode": "HTML",
-                                 "disable_web_page_preview": "true"})
-
-
-def publish_channel(image_path, caption):
-    chat = os.getenv("TELEGRAM_CHANNEL_ID")
-    if not chat:
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    try:
+        n = _issue_number(headers, repo)
+        r = requests.post(f"{API}/repos/{repo}/issues/{n}/comments", headers=headers,
+                          json={"body": text[:60000]}, timeout=30)
+        r.raise_for_status()
+        return True
+    except requests.RequestException as e:
+        print(f"[github] alerte non envoyée: {redact(e)}\n{text}")
         return False
-    if image_path.suffix != ".jpg":
-        return _call("sendMessage", {"chat_id": chat, "text": caption[:4000]})
-    with image_path.open("rb") as f:
-        return _call("sendPhoto", {"chat_id": chat, "caption": caption[:1024]}, files={"photo": f})
 
 
 if __name__ == "__main__":

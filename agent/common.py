@@ -15,7 +15,7 @@ STATE = ROOT / "state"
 LOG = STATE / "log.jsonl"
 CFG = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
 
-SECRET_ENVS = ("GEMINI_API_KEY", "GROQ_API_KEY", "TELEGRAM_BOT_TOKEN", "CF_API_TOKEN", "POLLINATIONS_TOKEN")
+SECRET_ENVS = ("GEMINI_API_KEY", "GROQ_API_KEY", "GITHUB_TOKEN", "CF_API_TOKEN", "POLLINATIONS_TOKEN")
 
 
 def now():
