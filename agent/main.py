@@ -23,7 +23,8 @@ Règles :
 - N'invente aucun prix, chiffre, témoignage ou fonctionnalité dont tu n'es pas sûr.
 - Pour citer une offre partenaire pertinente, écris exactement [[offer:ID]] (3 fois maximum, seulement si pertinent).
 - Pour recommander un produit physique, écris [[amazon:mots clés produit]] (2 fois maximum).
-- image_prompt : en anglais, illustration éditoriale percutante, couleurs vives, AUCUN texte ni logo dans l'image.
+- image_prompt : en anglais, 1 à 2 phrases décrivant UNE métaphore visuelle simple et concrète du sujet
+  (objets, personnes, mains, bureau, plantes...). Pas de robots, cerveaux, hologrammes ni texte : le style est imposé ailleurs.
 
 Réponds UNIQUEMENT en JSON avec les clés :
 {{"title": "...", "description": "meta description 150 caractères", "body_markdown": "...", "image_prompt": "..."}}"""

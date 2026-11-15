@@ -3,7 +3,11 @@ import pathlib
 import tempfile
 
 from agent.heal import culprit, is_transient
-from agent.image import fallback_svg
+import io
+
+from PIL import Image
+
+from agent.image import fallback_svg, to_jpeg
 from agent.llm import pick_gemini, pick_groq
 from agent.promote import pending_urls
 from agent.site import build_index, link_placeholders, render_markdown, slugify, write_post
@@ -21,6 +25,10 @@ def main():
     assert 'rel="sponsored' in render_markdown("## T\n\n[a](https://e.com)")
 
     assert "&lt;Titre&gt;" in fallback_svg("<Titre>")
+    buf = io.BytesIO()
+    Image.new("RGB", (1024, 1024), "red").save(buf, "PNG")
+    jpg = Image.open(io.BytesIO(to_jpeg(buf.getvalue())))
+    assert jpg.format == "JPEG" and jpg.size == (1024, 576), jpg.size
 
     gen = ["generateContent"]
     picked = pick_gemini([{"name": f"models/{n}", "supportedGenerationMethods": gen} for n in
