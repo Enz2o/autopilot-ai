@@ -56,7 +56,7 @@ def _try_models(provider, call):
             return call(model)
         except requests.HTTPError as e:
             last = e
-            if e.response is None or e.response.status_code not in (400, 404):
+            if e.response is None or e.response.status_code not in (400, 404, 429, 500, 503):
                 raise
     raise last or RuntimeError(f"{provider}: aucun modèle disponible")
 

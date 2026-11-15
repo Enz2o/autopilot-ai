@@ -20,7 +20,10 @@ header a{text-decoration:none;color:var(--fg);font-weight:800;font-size:1.3rem}.
 
 def slugify(text):
     text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
-    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")[:70].strip("-") or "article"
+    slug = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+    if len(slug) > 70:
+        slug = slug[:71].rsplit("-", 1)[0]  # cut on a word boundary
+    return slug or "article"
 
 
 def link_placeholders(md, offers, amazon_tag):

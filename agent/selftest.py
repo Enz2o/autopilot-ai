@@ -11,6 +11,7 @@ from agent.site import build_index, link_placeholders, render_markdown, slugify,
 def main():
     assert slugify("Éléphant & Co !") == "elephant-co"
     assert slugify("!!!") == "article"
+    assert slugify("mot " * 30).endswith("mot") and len(slugify("mot " * 30)) <= 70
 
     md = link_placeholders("Voir [[offer:x]] et [[amazon:clavier sans fil]]",
                            {"x": {"name": "X", "url": "https://x.io"}}, "tag-21")
