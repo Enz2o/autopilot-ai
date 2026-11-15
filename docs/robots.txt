@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://enz2o.github.io/autopilot-ai/sitemap.xml
