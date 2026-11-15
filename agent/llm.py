@@ -122,6 +122,8 @@ def ask_json(prompt, required=()):
                     raise ValueError(f"champs manquants {missing}")
                 return data, name
             except Exception as e:  # network, quota, bad JSON: retry then fail over
-                errors.append(f"{name}#{attempt + 1}: {str(e)[:200]}")
+                detail = getattr(getattr(e, "response", None), "text", "")[:200]
+                errors.append(f"{name}#{attempt + 1}: {str(e)[:200]} {detail}")
+                print(f"[llm] échec {errors[-1]}")
                 time.sleep(3 * 2 ** attempt)
     raise RuntimeError("LLM_UNAVAILABLE: " + " | ".join(errors))
