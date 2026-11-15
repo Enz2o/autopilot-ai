@@ -7,8 +7,69 @@ import time
 import requests
 
 
+_SKIP = re.compile(r"lite|image|tts|live|audio|embed|exp|thinking|vision|guard|whisper|robotics|computer|native", re.I)
+_GROQ_PREF = [r"gpt-oss-120b", r"llama-4-maverick", r"llama-3\.3-70b", r"kimi", r"qwen", r"gpt-oss-20b"]
+_cache = {}
+
+
+def pick_gemini(models):
+    """Newest stable 'flash' text model from the models.list payload (models retire, names change)."""
+    def version(name):
+        m = re.search(r"gemini-(\d+(?:\.\d+)?)", name)
+        return float(m.group(1)) if m else 0.0
+    names = [m["name"].removeprefix("models/") for m in models
+             if "generateContent" in m.get("supportedGenerationMethods", [])
+             and re.fullmatch(r"gemini-[\d.]+-flash(-preview.*|-latest|-\d+)?", m["name"].removeprefix("models/"))
+             and not _SKIP.search(m["name"])]
+    return sorted(names, key=lambda n: (version(n), "preview" not in n), reverse=True)
+
+
+def pick_groq(ids):
+    chat = [i for i in ids if not _SKIP.search(i)]
+    ordered = [i for p in _GROQ_PREF for i in chat if re.search(p, i)]
+    return list(dict.fromkeys(ordered + chat))
+
+
+def _models(provider):
+    if provider not in _cache:
+        if provider == "gemini":
+            r = requests.get("https://generativelanguage.googleapis.com/v1beta/models", params={"pageSize": 200},
+                             headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"]}, timeout=60)
+            r.raise_for_status()
+            found = pick_gemini(r.json().get("models", []))
+        else:
+            r = requests.get("https://api.groq.com/openai/v1/models",
+                             headers={"Authorization": f"Bearer {os.environ['GROQ_API_KEY']}"}, timeout=60)
+            r.raise_for_status()
+            found = pick_groq([m["id"] for m in r.json().get("data", []) if m.get("active", True)])
+        env = os.getenv(f"{provider.upper()}_MODEL")
+        _cache[provider] = ([env] if env else []) + found[:3]
+        print(f"[llm] {provider} modèles: {_cache[provider]}")
+    return _cache[provider]
+
+
+def _try_models(provider, call):
+    """Call with each discovered model; a 404 (retired model) moves to the next one."""
+    last = None
+    for model in _models(provider):
+        try:
+            return call(model)
+        except requests.HTTPError as e:
+            last = e
+            if e.response is None or e.response.status_code not in (400, 404):
+                raise
+    raise last or RuntimeError(f"{provider}: aucun modèle disponible")
+
+
 def _gemini(prompt):
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    return _try_models("gemini", lambda model: _gemini_call(prompt, model))
+
+
+def _groq(prompt):
+    return _try_models("groq", lambda model: _groq_call(prompt, model))
+
+
+def _gemini_call(prompt, model):
     r = requests.post(
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
         headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"]},  # header, not URL: keeps key out of errors
@@ -22,12 +83,12 @@ def _gemini(prompt):
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
-def _groq(prompt):
+def _groq_call(prompt, model):
     r = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={"Authorization": f"Bearer {os.environ['GROQ_API_KEY']}"},
         json={
-            "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+            "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "response_format": {"type": "json_object"},
             "temperature": 0.9,

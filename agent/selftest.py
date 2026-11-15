@@ -4,6 +4,7 @@ import tempfile
 
 from agent.heal import culprit, is_transient
 from agent.image import fallback_svg
+from agent.llm import pick_gemini, pick_groq
 from agent.site import build_index, link_placeholders, render_markdown, slugify, write_post
 
 
@@ -18,6 +19,14 @@ def main():
     assert 'rel="sponsored' in render_markdown("## T\n\n[a](https://e.com)")
 
     assert "&lt;Titre&gt;" in fallback_svg("<Titre>")
+
+    gen = ["generateContent"]
+    picked = pick_gemini([{"name": f"models/{n}", "supportedGenerationMethods": gen} for n in
+                          ("gemini-2.0-flash", "gemini-3-flash-preview", "gemini-3-flash", "gemini-3-flash-lite",
+                           "gemini-3-pro", "gemini-3-flash-image")]
+                         + [{"name": "models/gemini-9-flash", "supportedGenerationMethods": ["embedContent"]}])
+    assert picked == ["gemini-3-flash", "gemini-3-flash-preview", "gemini-2.0-flash"], picked
+    assert pick_groq(["whisper-large-v3", "qwen3-32b", "openai/gpt-oss-120b"])[:2] == ["openai/gpt-oss-120b", "qwen3-32b"]
 
     assert is_transient("requests.exceptions.ReadTimeout: boom")
     assert is_transient("RuntimeError: LLM_UNAVAILABLE: gemini#1: 429")
