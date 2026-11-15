@@ -8,10 +8,10 @@
   "amazon_tag": "",
   "offers": [
     {
-      "id": "exemple",
-      "name": "Remplace-moi par ton offre affiliée",
-      "url": "https://example.com/?ref=TON_ID",
-      "pitch": "Décris en une phrase ce que fait le produit et pour qui."
+      "id": "systemeio",
+      "name": "Systeme.io",
+      "url": "https://systeme.io/?sa=sa0286432026d80f70778ac0f4bc21c6b479b71d7a",
+      "pitch": "Outil français tout-en-un avec offre gratuite : site, tunnels de vente, e-mailing, formations en ligne et affiliation. Idéal pour freelances et créateurs qui veulent vendre en ligne sans payer plusieurs logiciels."
     }
   ]
 }
