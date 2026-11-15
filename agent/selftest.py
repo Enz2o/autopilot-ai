@@ -5,6 +5,7 @@ import tempfile
 from agent.heal import culprit, is_transient
 from agent.image import fallback_svg
 from agent.llm import pick_gemini, pick_groq
+from agent.promote import pending_urls
 from agent.site import build_index, link_placeholders, render_markdown, slugify, write_post
 
 
@@ -35,7 +36,10 @@ def main():
     assert culprit('File "/r/agent/main.py", line 9\nFile "/r/agent/site.py", line 3, in f') == "site.py"
     assert culprit('File "C:\\r\\agent\\llm.py", line 3') is None
 
-    cfg = {"site_name": "T", "site_tagline": "t"}
+    assert pending_urls([{"slug": "a"}], "https://h/r", set()) == ["https://h/r/p/a.html", "https://h/r/"]
+    assert pending_urls([{"slug": "a"}], "https://h/r", {"https://h/r/p/a.html"}) == []
+
+    cfg = {"site_name": "T", "site_tagline": "t", "indexnow_key": "abc123"}
     post = {"slug": "a-b", "title": "A <b>", "description": "d", "image": "a-b.jpg", "date": "2026-01-01"}
     with tempfile.TemporaryDirectory() as d:
         docs = pathlib.Path(d)
@@ -44,6 +48,8 @@ def main():
         page = (docs / "p" / "a-b.html").read_text(encoding="utf-8")
         assert "A &lt;b&gt;" in page and "<h2>Hello</h2>" in page
         assert "https://x.github.io/r/p/a-b.html" in (docs / "sitemap.xml").read_text(encoding="utf-8")
+        assert "<item><title>A &lt;b&gt;</title>" in (docs / "feed.xml").read_text(encoding="utf-8")
+        assert (docs / "abc123.txt").read_text(encoding="utf-8") == "abc123"
     print("selftest OK")
 
 

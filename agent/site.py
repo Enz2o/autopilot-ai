@@ -51,7 +51,8 @@ def _page(title, description, body, cfg, canonical="", image="", prefix=""):
     return f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{t}</title>
 <meta name="description" content="{d}"><meta property="og:title" content="{t}">
-<meta property="og:description" content="{d}">{og}{can}<style>{CSS}</style></head>
+<meta property="og:description" content="{d}">{og}{can}
+<link rel="alternate" type="application/rss+xml" title="RSS" href="{prefix}feed.xml"><style>{CSS}</style></head>
 <body><div class="w"><header><a href="{prefix}index.html">{html.escape(cfg['site_name'])}</a>
 <div class="mut">{html.escape(cfg.get('site_tagline', ''))}</div></header><main>{body}</main>
 <footer class="mut"><p>Certains liens sont affiliés : si tu achètes via ces liens, le site peut toucher une commission,
@@ -85,4 +86,14 @@ def build_index(docs, posts, cfg, base_url):
         '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         + "".join(f"<url><loc>{html.escape(u)}</loc></url>" for u in urls) + "</urlset>", encoding="utf-8")
     (docs / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n", encoding="utf-8")
+    items = "".join(
+        f"<item><title>{html.escape(p['title'])}</title><link>{base_url}/p/{p['slug']}.html</link>"
+        f"<guid>{base_url}/p/{p['slug']}.html</guid><description>{html.escape(p['description'])}</description>"
+        f"<pubDate>{p['date']}</pubDate></item>" for p in posts[:30])
+    (docs / "feed.xml").write_text(
+        f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>{html.escape(cfg["site_name"])}'
+        f"</title><link>{base_url}/</link><description>{html.escape(cfg.get('site_tagline', ''))}</description>"
+        f"{items}</channel></rss>", encoding="utf-8")
+    if cfg.get("indexnow_key"):  # IndexNow ownership proof
+        (docs / f"{cfg['indexnow_key']}.txt").write_text(cfg["indexnow_key"], encoding="utf-8")
     (docs / ".nojekyll").write_text("", encoding="utf-8")

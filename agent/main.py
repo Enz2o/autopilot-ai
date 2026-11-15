@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-from agent import image, llm, site
+from agent import image, llm, promote, site
 from agent.common import CFG, DOCS, STATE, log_event, now, site_url
 
 POSTS = STATE / "posts.json"
@@ -71,6 +71,10 @@ def create_post(posts):
 
 def run():
     posts = load_posts()
+    try:  # promotion must never block publishing
+        promote.submit_pending(posts)
+    except Exception as e:
+        log_event("error", error=f"promotion: {type(e).__name__}: {e}"[:300])
     for _ in range(int(CFG.get("posts_per_run", 1))):
         create_post(posts)
 

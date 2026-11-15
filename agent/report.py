@@ -17,6 +17,8 @@ def build(hours=24):
              f"📝 Articles publiés (24 h) : <b>{len(posts)}</b> · total : {total}",
              f"🖼 Images IA : {sum(1 for p in posts if not str(p.get('image_source', '')).startswith('svg'))}"
              f"/{len(posts)}",
+             f"📣 URLs signalées aux moteurs (IndexNow) : "
+             f"{sum(e.get('urls', 0) for e in events if e['kind'] == 'promote' and e.get('status') in (200, 202))}",
              f"🧯 Erreurs : {len(errors)} · 🩹 Réparations : {sum(1 for h in heals if h.get('status') == 'patched')}"]
     if posts:
         lines.append("\n<b>Publications</b>")
