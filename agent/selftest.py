@@ -7,7 +7,7 @@ import io
 
 from PIL import Image
 
-from agent.image import fallback_svg, to_jpeg
+from agent.image import cover, to_jpeg
 from agent.llm import pick_gemini, pick_groq
 from agent.promote import pending_urls
 from agent.site import build_index, link_placeholders, render_markdown, slugify, write_post
@@ -24,7 +24,9 @@ def main():
     assert link_placeholders("[[amazon:clavier]] [[offer:nope]]", {}, "") == "clavier nope"
     assert 'rel="sponsored' in render_markdown("## T\n\n[a](https://e.com)")
 
-    assert "&lt;Titre&gt;" in fallback_svg("<Titre>")
+    a, b = cover("Un titre assez long pour tenir sur plusieurs lignes " * 3, "x"), cover("Court", "x")
+    assert Image.open(io.BytesIO(a)).size == (1200, 675) and a != b and a == cover(
+        "Un titre assez long pour tenir sur plusieurs lignes " * 3, "x")
     buf = io.BytesIO()
     Image.new("RGB", (1024, 1024), "red").save(buf, "PNG")
     jpg = Image.open(io.BytesIO(to_jpeg(buf.getvalue())))

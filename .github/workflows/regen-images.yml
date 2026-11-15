@@ -17,14 +17,15 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python -m agent.image regen
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - run: |
+          export SITE_URL="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}"
+          python -m agent.image regen
+        shell: bash
       - name: Sauvegarde
         run: |
           git config user.name "autopilot-bot"
           git config user.email "autopilot-bot@users.noreply.github.com"
-          git add docs/img
+          git add docs/img state
           git diff --cached --quiet && exit 0
           git commit -m "Images redessinées"
           git pull --rebase && git push
